@@ -45,29 +45,44 @@ showBoard (Board ((Col c):cs)) = showBoardRec (Board ((Col c):cs)) ((length c)-1
 --0000000000000000000000  UPDATE THE BOARD  000000000000000000000000000000
 --000000000000000000000000000000000000000000000000000000000000000000000000
 
-updateCol :: [Int] -> Int -> Int -> [Int]
-updateCol c (-1) _ = c
-updateCol (x:xs) n p
-  | (x == 0) = (p:xs)++[n]
-  | otherwise = (x:(updateCol xs (n-1) p))
+updateCol :: [Int] -> Int -> Int -> Int -> [Int]
+updateCol c (-1) _ _ = c ++ [-1]
+updateCol (x:xs) i n p
+  | (x == 0) = (p:xs) ++ [n-i]
+  | otherwise = (x:(updateCol xs (i-1) n p))
 
-findCol :: [Col] -> Int -> Int -> ([Col], Int)
-findCol [] _ _ = ([], -1) -- para cuando m > num_cols
+findCol :: [Col] -> Int -> Int -> [Col]
 findCol ((Col c):cs) i p
-  | (i == 0)  = (((Col(take (l-1) u)):cs), (last u))
+  | (i == 0)  = ((Col u):cs)
   | otherwise = (Col c):(findCol cs (i-1) p)
   where
-    l = (length c) - 1
-    u = updateCol c l p
+    n = (length c)-1
+    u = updateCol c n n p
+
              --Board -> Col -> Jug -> Result
 updateBoard :: Board -> Int -> Int -> (Board, Int)
 updateBoard (Board cs) i p
   | (i > ((length cs)-1)) = (Board cs, -1)
   | (i < 0)               = (Board cs, -1)
-  | otherwise             = ((Board (fst t)), snd t)
+  | otherwise             = (Board (new_cs), index)
   where
-    t = findCol cs i p
+    res = findCol cs i p
+    index = lastInCol (res !! i)
+    new_cs = removeIndex res i
 
+lastInCol :: Col -> Int
+lastInCol (Col c) = last c
+
+removeLast :: [a] -> [a]
+removeLast (x:[]) = []
+removeLast (x:xs) = (x:(removeLast xs))
+
+removeIndex :: [Col] -> Int -> [Col]
+removeIndex ((Col c):cs) i
+  | (i == 0) = ((Col r):cs)
+  | otherwise = ((Col c):(removeIndex cs (i-1)))
+  where
+    r = removeLast c
 --00000000000000000000000000000000000000000000000000000000000000000000000
 --0000000000000000000000  INITIALIZE GAME  000000000000000000000000000000
 --00000000000000000000000000000000000000000000000000000000000000000000000
@@ -104,6 +119,7 @@ play b player = do
   let c = read col :: Int
   let (new_b, i) = updateBoard b c player
   showBoard new_b
+  putStrLn $ "Index : "++(show i)
   let w = checkWin new_b c i
   if (w /= -1) then
     return w
