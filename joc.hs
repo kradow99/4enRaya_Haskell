@@ -1,15 +1,31 @@
 import System.Random
 
-data Col = Col [Int] deriving(Show)
-
-data Board = Board [Col] deriving(Show)
+data Board = Board [[Int]]
 
 createBoard :: Int -> Int -> Board
-createBoard n m = Board (take m $ repeat $ Col (take n $ repeat 0))
+createBoard n m = Board (take m $ repeat $ (take n $ repeat 0))
 
 --00000000000000000000000000000000000000000000000000000000000000000000000
 --0000000000000000000000  PRINT THE BOARD  000000000000000000000000000000
 --00000000000000000000000000000000000000000000000000000000000000000000000
+
+showBoard :: Board -> IO()
+showBoard (Board (c:cs)) = showBoardRec (Board (c:cs)) ((length c)-1)
+
+showBoardRec :: Board -> Int -> IO ()
+showBoardRec (Board cs) (-1) = do
+  printIndex 0 ((length cs)-1)
+  return ()
+showBoardRec b n = do
+  putStrLn $ printRow b n
+  showBoardRec b (n-1)
+
+printRow :: Board -> Int -> String
+printRow (Board []) _ = ""
+printRow (Board (c:cs)) n
+  | ((c !! n) == 0) = "·" ++ (printRow (Board cs) n)
+  | ((c !! n) == 1) = "o" ++ (printRow (Board cs) n)
+  | ((c !! n) == 2) = "x" ++ (printRow (Board cs) n)
 
 printIndex :: Int -> Int -> IO ()
 printIndex 0 m = do
@@ -22,67 +38,40 @@ printIndex i m = do
     putStr " "
     printIndex (i+1) m
 
-printRow :: Board -> Int -> String
-printRow (Board []) _ = ""
-printRow (Board ((Col c):cs)) n
-  | ((c !! n) == 0) = "·" ++ (printRow (Board cs) n)
-  | ((c !! n) == 1) = "o" ++ (printRow (Board cs) n)
-  | ((c !! n) == 2) = "x" ++ (printRow (Board cs) n)
-
-showBoardRec :: Board -> Int -> IO ()
-showBoardRec (Board cs) (-1) = do
-  printIndex 0 ((length cs)-1)
-  return ()
-showBoardRec b n = do
-  putStrLn $ printRow b n
-  showBoardRec b (n-1)
-
-showBoard :: Board -> IO()
-showBoard (Board ((Col c):cs)) = showBoardRec (Board ((Col c):cs)) ((length c)-1)
-
-
 --000000000000000000000000000000000000000000000000000000000000000000000000
 --0000000000000000000000  UPDATE THE BOARD  000000000000000000000000000000
 --000000000000000000000000000000000000000000000000000000000000000000000000
 
+             --Board -> Col -> Jug -> (Board, height)
+updateBoard :: Board -> Int -> Int -> (Board, Int)
+updateBoard (Board cs) i p = (Board new, pos)
+  where
+    u     = updateBoardRec cs i p
+    [pos] = last u
+    new   = removeLast u
+
+updateBoardRec :: [[Int]] -> Int -> Int -> [[Int]]
+updateBoardRec (c:cs) i p
+  | (i > ((length cs))) = (c:cs)++[[-1]]
+  | (i < 0)             = (c:cs)++[[-1]]
+  | (i == 0)            = (u2 : cs) ++ [[pos]]
+  | otherwise           = (c : (updateBoardRec (cs) (i-1) p))
+  where
+    n   = (length c)-1
+    u1  = updateCol c n n p
+    pos = last u1
+    u2  = removeLast u1
+
 updateCol :: [Int] -> Int -> Int -> Int -> [Int]
 updateCol c (-1) _ _ = c ++ [-1]
 updateCol (x:xs) i n p
-  | (x == 0) = (p:xs) ++ [n-i]
+  | (x == 0)  = (p:xs) ++ [n-i]
   | otherwise = (x:(updateCol xs (i-1) n p))
-
-findCol :: [Col] -> Int -> Int -> [Col]
-findCol ((Col c):cs) i p
-  | (i == 0)  = ((Col u):cs)
-  | otherwise = (Col c):(findCol cs (i-1) p)
-  where
-    n = (length c)-1
-    u = updateCol c n n p
-
-             --Board -> Col -> Jug -> Result
-updateBoard :: Board -> Int -> Int -> (Board, Int)
-updateBoard (Board cs) i p
-  | (i > ((length cs)-1)) = (Board cs, -1)
-  | (i < 0)               = (Board cs, -1)
-  | otherwise             = (Board (new_cs), index)
-  where
-    res = findCol cs i p
-    index = lastInCol (res !! i)
-    new_cs = removeIndex res i
-
-lastInCol :: Col -> Int
-lastInCol (Col c) = last c
 
 removeLast :: [a] -> [a]
 removeLast (x:[]) = []
 removeLast (x:xs) = (x:(removeLast xs))
 
-removeIndex :: [Col] -> Int -> [Col]
-removeIndex ((Col c):cs) i
-  | (i == 0) = ((Col r):cs)
-  | otherwise = ((Col c):(removeIndex cs (i-1)))
-  where
-    r = removeLast c
 --00000000000000000000000000000000000000000000000000000000000000000000000
 --0000000000000000000000  INITIALIZE GAME  000000000000000000000000000000
 --00000000000000000000000000000000000000000000000000000000000000000000000
@@ -109,8 +98,31 @@ initBoard = do
 --000000000000000000000000000000  PLAY  000000000000000000000000000000000
 --00000000000000000000000000000000000000000000000000000000000000000000000
 
-checkWin :: Board -> Int -> Int -> Int
-checkWin b c i = -1
+checkWin :: Board -> Int -> Int -> Int -> IO Int
+checkWin _ _ (-1) _ = do
+  return (-1)
+checkWin b c i p = do
+  r1 <- checkWinVert b c i p
+  if (r1 /= -1) then
+    return r1
+  else do
+    r2 <- checkWinVert b c i p
+    if (r2 /= -1) then
+      return r2
+    else do
+      r3 <- checkWinVert b c i p
+      if (r3 /= -1) then
+        return r3
+      else do
+        r4 <- checkWinVert b c i p
+        if (r4 /= -1) then
+          return r4
+        else
+          return (-1)
+
+checkWinVert :: Board -> Int -> Int -> Int -> IO Int
+checkWinVert b c i p = do
+  return (-1)
 
 play :: Board -> Int -> IO Int--winner
 play b player = do
@@ -120,7 +132,7 @@ play b player = do
   let (new_b, i) = updateBoard b c player
   showBoard new_b
   putStrLn $ "Index : "++(show i)
-  let w = checkWin new_b c i
+  w <- checkWin new_b c i player
   if (w /= -1) then
     return w
   else
@@ -142,3 +154,5 @@ main = do
     2 -> putStrLn "CPU wins!"
     otherwise -> putStrLn "Error. Something were wrong"
   return ()
+
+b  = createBoard 5 10
