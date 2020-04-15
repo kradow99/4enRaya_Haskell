@@ -1,6 +1,7 @@
 import System.Random
 
 data Board = Board [[Int]]
+type Strategy = Board -> IO Int
 
 createBoard :: Int -> Int -> Board
 createBoard n m = Board (take m $ repeat $ (take n $ repeat 0))
@@ -94,6 +95,22 @@ initBoard = do
     else
       return (createBoard n m)
 
+chooseStrategy :: IO (Board -> IO Int)
+chooseStrategy = do
+  putStrLn "Please introduce the strategy of the CPU:"
+  putStrLn "[0] Random"
+  putStrLn "[1] Greedy"
+  putStrLn "[2] Smart"
+  str <- getLine
+  let s = read str :: Int
+  if (s > 2 || s < 0) then do
+    putStrLn "\nERROR: You must introduce a number between [0..2]\n"
+    chooseStrategy
+  else do
+    case s of
+      0 -> return randomStrat
+      1 -> return greedyStrat
+      2 -> return smartStrat
 --00000000000000000000000000000000000000000000000000000000000000000000000
 --000000000000000000000000000000  PLAY  000000000000000000000000000000000
 --00000000000000000000000000000000000000000000000000000000000000000000000
@@ -101,42 +118,110 @@ initBoard = do
 checkWin :: Board -> Int -> Int -> Int -> IO Int
 checkWin _ _ (-1) _ = do
   return (-1)
-checkWin b c i p = do
-  r1 <- checkWinVert b c i p
+checkWin (Board cs) col row player = do
+  r1 <- checkWinVert (cs !! col) player 0
   if (r1 /= -1) then
     return r1
   else do
-    r2 <- checkWinVert b c i p
+    r2 <- checkWinHori cs row player 0
     if (r2 /= -1) then
       return r2
     else do
-      r3 <- checkWinVert b c i p
+      r3 <- checkWinDia1 cs col row col row player 0
       if (r3 /= -1) then
         return r3
       else do
-        r4 <- checkWinVert b c i p
+        r4 <- checkWinDia2 cs col row col row player 0
         if (r4 /= -1) then
           return r4
         else
           return (-1)
 
-checkWinVert :: Board -> Int -> Int -> Int -> IO Int
-checkWinVert b c i p = do
-  return (-1)
+checkWinDia1 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> IO Int
+checkWinDia1 _ _ _ _ _ p 4 = do return p
+checkWinDia1 cs cini rini col row p count
+  | (row == -1)        = do return (-1)
+  | (col == length cs) = do return (-1)
 
-play :: Board -> Int -> IO Int--winner
-play b player = do
+  | (col == cini) = checkWinDia1 cs cini rini (cini-1) (rini+1) p 1
+
+  | (col == -1)               = checkWinDia1 cs cini rini (cini+1) (rini-1) p count
+  | (row == length (cs !! 0)) = checkWinDia1 cs cini rini (cini+1) (rini-1) p count
+
+  | (col < cini) = do
+    if (((cs !! col) !! row) == p) then
+      checkWinDia1 cs cini rini (col-1) (row+1) p (count+1)
+    else checkWinDia1 cs cini rini (cini+1) (rini-1) p count
+  | (col > cini) = do
+    if (((cs !! col) !! row) == p) then
+      checkWinDia1 cs cini rini (col+1) (row-1) p (count+1)
+    else return (-1)
+
+checkWinDia2 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> IO Int
+checkWinDia2 _ _ _ _ _ p 4 = do return p
+checkWinDia2 cs cini rini col row p count
+  | (row == length (cs !! 0)) = do return (-1)
+  | (col == length cs)        = do return (-1)
+
+  | (col == cini) = checkWinDia2 cs cini rini (cini-1) (rini-1) p 1
+
+  | (col == -1) = checkWinDia2 cs cini rini (cini+1) (rini+1) p count
+  | (row == -1) = checkWinDia2 cs cini rini (cini+1) (rini+1) p count
+
+  | (col < cini) = do
+    if (((cs !! col) !! row) == p) then
+      checkWinDia2 cs cini rini (col-1) (row-1) p (count+1)
+    else checkWinDia2 cs cini rini (cini+1) (rini+1) p count
+  | (col > cini) = do
+    if (((cs !! col) !! row) == p) then
+      checkWinDia2 cs cini rini (col+1) (row+1) p (count+1)
+    else return (-1)
+
+checkWinHori :: [[Int]] -> Int -> Int -> Int -> IO Int
+checkWinHori _ _ p 4 = do
+  return p
+checkWinHori [] _ _ _ = do
+  return (-1)
+checkWinHori (c:cs) r p count = do
+  if ((c !! r) == p) then
+    checkWinHori cs r p (count+1)
+  else checkWinHori cs r p 0
+
+checkWinVert :: [Int] -> Int -> Int -> IO Int
+checkWinVert _ p 4 = do
+  return p
+checkWinVert [] _ _ = do
+  return (-1)
+checkWinVert (x:xs) p count = do
+  if (x == p) then
+    checkWinVert xs p (count+1)
+  else checkWinVert xs p 0
+
+
+play :: Board -> Int -> Strategy -> IO Int--winner
+play b 1 strat = do
   putStrLn "Select a column"
   col <- getLine
   let c = read col :: Int
-  let (new_b, i) = updateBoard b c player
-  showBoard new_b
+  let (new_b, i) = updateBoard b c 1
   putStrLn $ "Index : "++(show i)
-  w <- checkWin new_b c i player
+  w <- checkWin new_b c i 1
+  if (w /= -1) then do
+    showBoard new_b
+    return w
+  else
+    play new_b 2 strat
+--play new_b ((mod player 2)+1)
+play b 2 strat = do
+  c <- strat b
+  let (new_b, i) = updateBoard b c 2
+  showBoard new_b
+  putStrLn $ "CPU has choosen the row "++(show c)
+  w <- checkWin new_b c i 2
   if (w /= -1) then
     return w
   else
-    play new_b ((mod player 2)+1)
+    play new_b 1 strat
 
 --00000000000000000000000000000000000000000000000000000000000000000000000
 --00000000000000000000000000000  MAIN  0000000000000000000000000000000000
@@ -146,8 +231,9 @@ main :: IO ()
 main = do
   putStrLn "Welcome to the Connect4 game"
   b <- initBoard
+  s <- chooseStrategy
   showBoard b
-  winner <- play b 1
+  winner <- play b 1 s
   case winner of
     0 -> putStrLn "Draw"
     1 -> putStrLn "You win!"
@@ -155,4 +241,29 @@ main = do
     otherwise -> putStrLn "Error. Something were wrong"
   return ()
 
-b  = createBoard 5 10
+randomStrat :: Board -> IO Int
+randomStrat (Board cs) = do
+  res <- randInt 0 cols
+  let (new_b, i) = updateBoard (Board cs) res 1
+  if (i == -1) then do -- if the row selected is full then retry
+    randomStrat (Board cs)
+  else return res
+  where
+    cols = (length cs) - 1
+
+greedyStrat :: Board -> IO Int
+greedyStrat (Board cs) = do
+  return (-1)
+
+smartStrat :: Board -> IO Int
+smartStrat (Board cs) = randInt 0 cols
+  where
+    cols = (length cs) - 1
+
+randInt :: Int -> Int -> IO Int
+-- randInt low high is an IO action that returns a
+-- pseudo-random integer between low and high (both included).
+randInt low high = do
+  random <- randomIO :: IO Int
+  let result = low + random `mod` (high - low + 1)
+  return result
