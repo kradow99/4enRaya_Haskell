@@ -111,31 +111,46 @@ chooseStrategy = do
       0 -> return randomStrat
       1 -> return greedyStrat
       2 -> return smartStrat
+
 --00000000000000000000000000000000000000000000000000000000000000000000000
---000000000000000000000000000000  PLAY  000000000000000000000000000000000
+--0000000000000000000000000000 CHECK WIN  0000000000000000000000000000000
 --00000000000000000000000000000000000000000000000000000000000000000000000
 
 checkWin :: Board -> Int -> Int -> Int -> IO Int
 checkWin _ _ (-1) _ = do
   return (-1)
 checkWin (Board cs) col row player = do
-  r1 <- checkWinVert (cs !! col) player 0
-  if (r1 /= -1) then
-    return r1
+  if (checkDraw cs) then
+    return 0
   else do
-    r2 <- checkWinHori cs row player 0
-    if (r2 /= -1) then
-      return r2
+    r1 <- checkWinVert (cs !! col) player 0
+    if (r1 /= -1) then
+      return r1
     else do
-      r3 <- checkWinDia1 cs col row col row player 0
-      if (r3 /= -1) then
-        return r3
+      r2 <- checkWinHori cs row player 0
+      if (r2 /= -1) then
+        return r2
       else do
-        r4 <- checkWinDia2 cs col row col row player 0
-        if (r4 /= -1) then
-          return r4
-        else
-          return (-1)
+        r3 <- checkWinDia1 cs col row col row player 0
+        if (r3 /= -1) then
+          return r3
+        else do
+          r4 <- checkWinDia2 cs col row col row player 0
+          if (r4 /= -1) then
+            return r4
+          else
+            return (-1)
+
+checkDraw :: [[Int]] -> Bool
+checkDraw [] = True
+checkDraw (c:cs)
+  | (fullCol c) = checkDraw cs
+  | otherwise = False
+
+fullCol :: [Int] -> Bool
+fullCol [] = True
+fullCol (0:xs) = False
+fullCol (x:xs) = fullCol xs
 
 checkWinDia1 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> IO Int
 checkWinDia1 _ _ _ _ _ p 4 = do return p
@@ -197,6 +212,9 @@ checkWinVert (x:xs) p count = do
     checkWinVert xs p (count+1)
   else checkWinVert xs p 0
 
+--00000000000000000000000000000000000000000000000000000000000000000000000
+--000000000000000000000000000000  PLAY  000000000000000000000000000000000
+--00000000000000000000000000000000000000000000000000000000000000000000000
 
 play :: Board -> Int -> Strategy -> IO Int--winner
 play b 1 strat = do
@@ -209,8 +227,7 @@ play b 1 strat = do
   if (w /= -1) then do
     showBoard new_b
     return w
-  else
-    play new_b 2 strat
+  else play new_b 2 strat
 --play new_b ((mod player 2)+1)
 play b 2 strat = do
   c <- strat b
@@ -220,8 +237,7 @@ play b 2 strat = do
   w <- checkWin new_b c i 2
   if (w /= -1) then
     return w
-  else
-    play new_b 1 strat
+  else play new_b 1 strat
 
 --00000000000000000000000000000000000000000000000000000000000000000000000
 --00000000000000000000000000000  MAIN  0000000000000000000000000000000000
@@ -241,6 +257,10 @@ main = do
     otherwise -> putStrLn "Error. Something were wrong"
   return ()
 
+--00000000000000000000000000000000000000000000000000000000000000000000000
+--000000000000000000000000000  STRATEGIES  000000000000000000000000000000
+--00000000000000000000000000000000000000000000000000000000000000000000000
+
 randomStrat :: Board -> IO Int
 randomStrat (Board cs) = do
   res <- randInt 0 cols
@@ -253,7 +273,127 @@ randomStrat (Board cs) = do
 
 greedyStrat :: Board -> IO Int
 greedyStrat (Board cs) = do
-  return (-1)
+  c1 <- checkNextWin cs 2 --check if CPU can win => wins
+  if (c1 /= -1) then
+    return c1
+  else do
+    c2 <- checkNextWin cs 1 -- check if human can win => avoid it
+    if (c2 /= -1) then
+      return c2
+    else randomStrat (Board cs)
+
+checkNextWin :: [[Int]] -> Int -> IO Int
+checkNextWin cs player = do
+  h <- checkNextWinHori cs 0 player
+  if (h /= -1) then
+    return h
+  else do
+    v <- checkNextWinVert cs 0 player
+    if (v /= -1) then
+      return v
+    else do
+      d1 <- checkNextWinDia1 cs 0 3 (length cs) player
+      if (d1 /= -1) then
+        return d1
+      else do
+        d2 <- checkNextWinDia2 cs 0 (length (cs !! 0) - 4) (length cs) player
+        if (d2 /= -1) then
+          return d2
+        else return (-1)
+
+checkNextWinVert :: [[Int]] -> Int -> Int -> IO Int
+checkNextWinVert [] _ _ = do return (-1)
+checkNextWinVert (c:cs) i player = do
+  if (checkCouldWinCol c 0 player) then
+    return i
+  else checkNextWinVert cs (i+1) player
+
+checkCouldWinCol :: [Int] -> Int -> Int -> Bool
+checkCouldWinCol [] _ _ = False
+checkCouldWinCol (0:xs) 3 _ = True
+checkCouldWinCol (x:xs) count player
+  | (x == player) = checkCouldWinCol xs (count+1) player
+  | (x == 0)      = False
+  | otherwise     = checkCouldWinCol xs 0 player
+
+checkNextWinHori :: [[Int]] -> Int -> Int -> IO Int
+checkNextWinHori cs i player
+  | (i == length (cs !! 0)) = do return (-1)
+  | otherwise = do
+    let res = checkCouldWinRow cs i 0 0 (-1) 2 2 player
+    if (res /= -1) then
+      return res
+    else checkNextWinHori cs (i+1) player
+
+checkCouldWinRow :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
+checkCouldWinRow _ _ _ 4 gap _ _ _ = gap
+checkCouldWinRow [] _ _ _ _ _ _ _  = (-1)
+checkCouldWinRow (c:cs) i col count gap ant2 ant1 player
+  | (c !! i == player)                             = checkCouldWinRow cs i (col+1) (count+1) gap ant1 (c !! i) player
+  | (c !! i == 0 && i > 0 && c !! (i-1) == 0)      = checkCouldWinRow cs i (col+1) 0 (-1) ant1 (c !! i) player
+  | (c !! i == 0 && ant1 == player && ant2 == 0)   = checkCouldWinRow cs i (col+1) 3 col ant1 (c !! i) player
+  | (c !! i == 0 && ant1 == player)                = checkCouldWinRow cs i (col+1) (count+1) col ant1 (c !! i) player
+  | (c !! i == 0)                                  = checkCouldWinRow cs i (col+1) 1 col ant1 (c !! i) player
+  | (c !! i /= player)                             = checkCouldWinRow cs i (col+1) 0 (-1) ant1 (c !! i) player
+
+checkNextWinDia1 :: [[Int]] -> Int -> Int -> Int -> Int -> IO Int
+checkNextWinDia1 (c:cs) col row n player
+  | (col == n - 3) = do return (-1)
+  | (row == length c) = do
+    let res = checkCouldWinDia1 (c:cs) col (row-1) 0 (-1) 2 2 player
+    if (res /= -1) then
+      return res
+    else checkNextWinDia1 cs (col+1) row n player
+  | (col == 0) = do
+    let res = checkCouldWinDia1 (c:cs) col row 0 (-1) 2 2 player
+    if (res /= -1) then
+      return res
+    else checkNextWinDia1 (c:cs) col (row+1) n player
+
+
+checkCouldWinDia1 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
+checkCouldWinDia1 _ _ _ 4 gap _ _ _ = gap
+checkCouldWinDia1 [] _ _ _ _ _ _ _  = (-1)
+checkCouldWinDia1 (c:cs) col row count gap ant2 ant1 player
+  | (row == -1)                                          = (-1)
+  | (c !! row == player)                                 = checkCouldWinDia1 cs (col+1) (row-1) (count+1) gap ant1 (c !! row) player
+  | (c !! row == 0 && row > 0 && c !! (row-1) == 0)      = checkCouldWinDia1 cs (col+1) (row-1) 0 (-1) ant1 (c !! row) player
+  | (c !! row == 0 && ant1 == player && ant2 == 0)       = checkCouldWinDia1 cs (col+1) (row-1) 2 col ant1 (c !! row) player
+  | (c !! row == 0 && ant1 == player)                    = checkCouldWinDia1 cs (col+1) (row-1) (count+1) col ant1 (c !! row) player
+  | (c !! row == 0)                                      = checkCouldWinDia1 cs (col+1) (row-1) 1 col ant1 (c !! row) player
+  | (c !! row /= player)                                 = checkCouldWinDia1 cs (col+1) (row-1) 0 (-1) ant1 (c !! row) player
+
+
+checkNextWinDia2 :: [[Int]] -> Int -> Int -> Int -> Int -> IO Int
+checkNextWinDia2 (c:cs) col (-1) n player
+  | (col == n - 3) = do return (-1)
+  | otherwise = do
+    let res = checkCouldWinDia2 (c:cs) col 0 0 (-1) 2 2 player
+    if (res /= -1) then
+      return res
+    else checkNextWinDia2 cs (col+1) (-1) n player
+checkNextWinDia2 cs 0 row n player = do
+  let res = checkCouldWinDia2 cs 0 row 0 (-1) 2 2 player
+  if (res /= -1) then
+    return res
+  else checkNextWinDia2 cs 0 (row-1) n player
+
+
+checkCouldWinDia2 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
+checkCouldWinDia2 _ _ _ 4 gap _ _ _ = gap
+checkCouldWinDia2 [] _ _ _ _ _ _ _  = (-1)
+checkCouldWinDia2 (c:cs) col row count gap ant2 ant1 player
+  | (row == length c)                                    = (-1)
+  | (c !! row == player)                                 = checkCouldWinDia2 cs (col+1) (row+1) (count+1) gap ant1 (c !! row) player
+  | (c !! row == 0 && row > 0 && c !! (row-1) == 0)      = checkCouldWinDia2 cs (col+1) (row+1) 0 (-1) ant1 (c !! row) player
+  | (c !! row == 0 && ant1 == player && ant2 == 0)       = checkCouldWinDia2 cs (col+1) (row+1) 2 col ant1 (c !! row) player
+  | (c !! row == 0 && ant1 == player)                    = checkCouldWinDia2 cs (col+1) (row+1) (count+1) col ant1 (c !! row) player
+  | (c !! row == 0)                                      = checkCouldWinDia2 cs (col+1) (row+1) 1 col ant1 (c !! row) player
+  | (c !! row /= player)                                 = checkCouldWinDia2 cs (col+1) (row+1) 0 (-1) ant1 (c !! row) player
+
+
+
+
 
 smartStrat :: Board -> IO Int
 smartStrat (Board cs) = randInt 0 cols
