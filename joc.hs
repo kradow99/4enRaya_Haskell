@@ -114,21 +114,20 @@ chooseStrategy = do
     case s of
       0 -> return randomStrat
       1 -> return greedyStrat
-      2 -> return smartStrat
+      2 -> return treeStrat
 
 --00000000000000000000000000000000000000000000000000000000000000000000000
 --0000000000000000000000000000 CHECK WIN  0000000000000000000000000000000
 --00000000000000000000000000000000000000000000000000000000000000000000000
 
-checkWin :: Board -> Int -> Int -> Int -> Int
-checkWin _ _ (-1) _ = -1
-checkWin (Board cs) col row player
-  | (checkDraw cs)                                     = 0
-  | ((checkWinVert (cs !! col) player 0) /= -1)        = player
-  | ((checkWinHori cs row player 0) /= -1)             = player
-  | ((checkWinDia1 cs col row col row player 0) /= -1) = player
-  | ((checkWinDia2 cs col row col row player 0) /= -1) = player
-  | otherwise = -1
+checkWin :: Board -> Int -> Int
+checkWin (Board cs) player
+  | (checkWinVert cs player /= -1)                                    = player
+  | (checkWinHori cs 0 player /= -1)                                  = player
+  | (checkWinDia1 cs 0 3 (length cs) player /= -1)                    = player
+  | (checkWinDia2 cs 0 (length (cs !! 0)-4) (length cs) player /= -1) = player
+  | (checkDraw cs)                                                    = 0
+  | otherwise                                                         = -1
 
 checkDraw :: [[Int]] -> Bool
 checkDraw [] = True
@@ -136,84 +135,89 @@ checkDraw (c:cs)
   | (elem 0 c) = False
   | otherwise = checkDraw cs
 
-checkWinDia1 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> Int
-checkWinDia1 _ _ _ _ _ p 4 = p
-checkWinDia1 cs cini rini col row p count
-  | (row == -1)        = -1
-  | (col == length cs) = -1
+checkWinDia1 :: [[Int]] -> Int -> Int -> Int -> Int -> Int
+checkWinDia1 (c:cs) col row n p
+  | (col == n - 3) = -1
+  | (checkWinOneDia1 (c:cs) row p 0 /= -1) = p
+  | (row == (length c)-1) = checkWinDia1 cs (col+1) row n p
+  | (col == 0)            = checkWinDia1 (c:cs) col (row+1) n p
 
-  | (col == cini)                               = checkWinDia1 cs cini rini (cini-1) (rini+1) p 1
+checkWinOneDia1 :: [[Int]] -> Int -> Int -> Int -> Int
+checkWinOneDia1 _ _ p 4 = p
+checkWinOneDia1 [] _ _ _ = -1
+checkWinOneDia1 (c:cs) row p count
+  | (row == -1)     = -1
+  | (c !! row == p) = checkWinOneDia1 cs (row-1) p (count+1)
+  | otherwise       = checkWinOneDia1 cs (row-1) p 0
 
-  | (col == -1)                                 = checkWinDia1 cs cini rini (cini+1) (rini-1) p count
-  | (row == length (cs !! 0))                   = checkWinDia1 cs cini rini (cini+1) (rini-1) p count
+checkWinDia2 :: [[Int]] -> Int -> Int -> Int -> Int -> Int
+checkWinDia2 (c:cs) col row n p
+  | (col == n - 3) = -1
+  | (checkWinOneDia2 (c:cs) row p 0 /= -1) = p
+  | (row == 0)            = checkWinDia2 cs (col+1) row n p
+  | (col == 0)            = checkWinDia2 (c:cs) col (row-1) n p
 
-  | (col < cini && ((cs !! col) !! row) == p)   = checkWinDia1 cs cini rini (col-1) (row+1) p (count+1)
-  | (col < cini)                                = checkWinDia1 cs cini rini (cini+1) (rini-1) p count
-  | (col > cini && (((cs !! col) !! row) == p)) = checkWinDia1 cs cini rini (col+1) (row-1) p (count+1)
-  | otherwise = -1
+checkWinOneDia2 :: [[Int]] -> Int -> Int -> Int -> Int
+checkWinOneDia2 _ _ p 4 = p
+checkWinOneDia2 [] _ _ _ = -1
+checkWinOneDia2 (c:cs) row p count
+  | (row == length c)     = -1
+  | (c !! row == p) = checkWinOneDia2 cs (row+1) p (count+1)
+  | otherwise       = checkWinOneDia2 cs (row+1) p 0
 
-checkWinDia2 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> Int
-checkWinDia2 _ _ _ _ _ p 4 = p
-checkWinDia2 cs cini rini col row p count
-  | (row == length (cs !! 0)) = -1
-  | (col == length cs)        = -1
 
-  | (col == cini)                               = checkWinDia2 cs cini rini (cini-1) (rini-1) p 1
+checkWinHori :: [[Int]] -> Int -> Int -> Int
+checkWinHori (c:cs) r p
+  | (r == height)                    = -1
+  | (checkWinRow (c:cs) r p 0 /= -1) = p
+  | otherwise                        = checkWinHori (c:cs) (r+1) p
+  where
+    height = length c
 
-  | (col == -1)                                 = checkWinDia2 cs cini rini (cini+1) (rini+1) p count
-  | (row == -1)                                 = checkWinDia2 cs cini rini (cini+1) (rini+1) p count
+checkWinRow :: [[Int]] -> Int -> Int -> Int -> Int
+checkWinRow _ _ p 4 = p
+checkWinRow [] _ _ _ = -1
+checkWinRow (c:cs) r p count
+  | ((c !! r) == p) = checkWinRow cs r p (count+1)
+  | otherwise       = checkWinRow cs r p 0
 
-  | (col < cini && (((cs !! col) !! row) == p)) = checkWinDia2 cs cini rini (col-1) (row-1) p (count+1)
-  | (col < cini)                                = checkWinDia2 cs cini rini (cini+1) (rini+1) p count
-  | (col > cini && (((cs !! col) !! row) == p)) = checkWinDia2 cs cini rini (col+1) (row+1) p (count+1)
-  | otherwise = -1
+checkWinVert :: [[Int]] -> Int -> Int
+checkWinVert [] _ = -1
+checkWinVert (c:cs) p
+  | (checkWinCol c p 0 /= -1) = p
+  | otherwise = checkWinVert cs p
 
-checkWinHori :: [[Int]] -> Int -> Int -> Int -> Int
-checkWinHori _ _ p 4 = p
-checkWinHori [] _ _ _ = -1
-checkWinHori (c:cs) r p count
-  | ((c !! r) == p) = checkWinHori cs r p (count+1)
-  | otherwise       = checkWinHori cs r p 0
+checkWinCol :: [Int] -> Int -> Int -> Int
+checkWinCol _ p 4 = p
+checkWinCol [] _ _ = -1
+checkWinCol (x:xs) p count
+  | (x == p)  = checkWinCol xs p (count+1)
+  | otherwise = checkWinCol xs p 0
 
-checkWinVert :: [Int] -> Int -> Int -> Int
-checkWinVert _ p 4 = p
-checkWinVert [] _ _ = -1
-checkWinVert (x:xs) p count
-  | (x == p)  = checkWinVert xs p (count+1)
-  | otherwise = checkWinVert xs p 0
 
 --00000000000000000000000000000000000000000000000000000000000000000000000
 --00000000000000000000000 CHECK NEXT WIN  0000000000000000000000000000000
 --00000000000000000000000000000000000000000000000000000000000000000000000
 
-checkNextWin :: [[Int]] -> Int -> Int -> [Int] -> IO Int
-checkNextWin cs player obj forbid = do
-  v <- checkNextWinVert cs 0 player obj forbid
-  if (v /= -1) then
-    return v
-  else do
-    d1 <- checkNextWinDia1 cs 0 3 (length cs) player obj forbid
-    if (d1 /= -1) then
-      return d1
-    else do
-      d2 <- checkNextWinDia2 cs 0 (length (cs !! 0) - 4) (length cs) player obj forbid
-      if (d2 /= -1) then
-        return d2
-      else do
-        h <- checkNextWinHori cs 0 player obj forbid
-        if (h /= -1) then
-          return h
-        else return (-1) -- esto sobra en realidad
+checkNextWin :: [[Int]] -> Int -> Int -> [Int] -> Int
+checkNextWin cs player obj forbid
+  | (v  /= -1) = v
+  | (d1 /= -1) = d1
+  | (d2 /= -1) = d2
+  | (h  /= -1) = h
+  | otherwise = -1
+  where
+    v  = checkNextWinVert cs 0 player obj forbid
+    d1 = checkNextWinDia1 cs 0 3 (length cs) player obj forbid
+    d2 = checkNextWinDia2 cs 0 (length (cs !! 0) - 4) (length cs) player obj forbid
+    h  = checkNextWinHori cs 0 player obj forbid
 
-checkNextWinVert :: [[Int]] -> Int -> Int -> Int -> [Int] -> IO Int
-checkNextWinVert [] _ _ _ _ = do return (-1)
-checkNextWinVert (c:cs) col player obj forbid = do
-  if (elem col forbid) then
-    checkNextWinVert cs (col+1) player obj forbid
-  else do
-    if (checkCouldWinCol c 0 player obj) then
-      return col
-    else checkNextWinVert cs (col+1) player obj forbid
+checkNextWinVert :: [[Int]] -> Int -> Int -> Int -> [Int] -> Int
+checkNextWinVert [] _ _ _ _ = -1
+checkNextWinVert (c:cs) col player obj forbid
+  | (elem col forbid)                 = checkNextWinVert cs (col+1) player obj forbid
+  | (checkCouldWinCol c 0 player obj) = col
+  | otherwise                         = checkNextWinVert cs (col+1) player obj forbid
 
 checkCouldWinCol :: [Int] -> Int -> Int -> Int -> Bool
 checkCouldWinCol [] _ _ _ = False
@@ -225,14 +229,13 @@ checkCouldWinCol (x:xs) count player obj
   | (x == 0)      = False
   | otherwise     = checkCouldWinCol xs 0 player obj
 
-checkNextWinHori :: [[Int]] -> Int -> Int -> Int -> [Int] -> IO Int
+checkNextWinHori :: [[Int]] -> Int -> Int -> Int -> [Int] -> Int
 checkNextWinHori cs i player obj forbid
-  | (i == length (cs !! 0)) = do return (-1)
-  | otherwise = do
-    let res = checkCouldWinRow cs i 0 0 (-1) 2 2 player obj forbid
-    if (res /= -1) then
-      return res
-    else checkNextWinHori cs (i+1) player obj forbid
+  | (i == length (cs !! 0)) = -1
+  | (res /= -1)             = res
+  | otherwise               = checkNextWinHori cs (i+1) player obj forbid
+  where
+    res = checkCouldWinRow cs i 0 0 (-1) 2 2 player obj forbid
 
 checkCouldWinRow :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> [Int] -> Int
 checkCouldWinRow [] _ _ count gap _ _ _ obj _
@@ -251,19 +254,16 @@ checkCouldWinRow (c:cs) i col count gap ant2 ant1 player obj forbid
   | (c !! i == 0)                                     = checkCouldWinRow cs     i (col+1) 1         col  ant1 (c !! i) player obj forbid
   | (c !! i /= player)                                = checkCouldWinRow cs     i (col+1) 0         (-1) ant1 (c !! i) player obj forbid
 
-checkNextWinDia1 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> [Int] -> IO Int
+checkNextWinDia1 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> [Int] -> Int
 checkNextWinDia1 (c:cs) col row n player obj forbid
-  | (col == n - 3) = do return (-1)
-  | (row == length c) = do
-    let res = checkCouldWinDia1 (c:cs) col (row-1) 0 (-1) 2 2 player obj forbid
-    if (res /= -1) then
-      return res
-    else checkNextWinDia1 cs (col+1) row n player obj forbid
-  | (col == 0) = do
-    let res = checkCouldWinDia1 (c:cs) col row 0 (-1) 2 2 player obj forbid
-    if (res /= -1) then
-      return res
-    else checkNextWinDia1 (c:cs) col (row+1) n player obj forbid
+  | (col == n - 3)                  = -1
+  | (row == length c && res1 /= -1) = res1
+  | (row == length c)               = checkNextWinDia1 cs    (col+1) row     n player obj forbid
+  | (col == 0 && res2 /= -1)        = res2
+  | (col == 0)                      = checkNextWinDia1 (c:cs) col    (row+1) n player obj forbid
+  where
+    res1 = checkCouldWinDia1 (c:cs) col (row-1) 0 (-1) 2 2 player obj forbid
+    res2 = checkCouldWinDia1 (c:cs) col  row    0 (-1) 2 2 player obj forbid
 
 checkCouldWinDia1 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> [Int] -> Int
 checkCouldWinDia1 [] _ _ count gap _ _ _ obj _
@@ -280,19 +280,19 @@ checkCouldWinDia1 (c:cs) col row count gap ant2 ant1 player obj forbid
   | (c !! row == 0)                                      = checkCouldWinDia1 cs (col+1) (row-1) 1 col ant1 (c !! row) player obj forbid
   | (c !! row /= player)                                 = checkCouldWinDia1 cs (col+1) (row-1) 0 (-1) ant1 (c !! row) player obj forbid
 
-checkNextWinDia2 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> [Int] -> IO Int
+checkNextWinDia2 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> [Int] -> Int
 checkNextWinDia2 (c:cs) col (-1) n player obj forbid
-  | (col == n - 3) = do return (-1)
-  | otherwise = do
-    let res = checkCouldWinDia2 (c:cs) col 0 0 (-1) 2 2 player obj forbid
-    if (res /= -1) then
-      return res
-    else checkNextWinDia2 cs (col+1) (-1) n player obj forbid
-checkNextWinDia2 cs 0 row n player obj forbid = do
-  let res = checkCouldWinDia2 cs 0 row 0 (-1) 2 2 player obj forbid
-  if (res /= -1) then
-    return res
-  else checkNextWinDia2 cs 0 (row-1) n player obj forbid
+  | (col == n - 3) = -1
+  | (res /= -1)    = res
+  | otherwise      = checkNextWinDia2 cs (col+1) (-1) n player obj forbid
+  where
+    res = checkCouldWinDia2 (c:cs) col 0 0 (-1) 2 2 player obj forbid
+checkNextWinDia2 cs 0 row n player obj forbid
+  | (res /= -1) = res
+  | otherwise   = checkNextWinDia2 cs 0 (row-1) n player obj forbid
+  where
+    res = checkCouldWinDia2 cs 0 row 0 (-1) 2 2 player obj forbid
+
 
 checkCouldWinDia2 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> [Int] -> Int
 checkCouldWinDia2 [] _ _ count gap _ _ _ obj _
@@ -320,7 +320,7 @@ play b 1 strat = do
   let c = read col :: Int
   let (new_b, i) = updateBoard b c 1
   --putStrLn $ "Index : "++(show i)
-  let w = checkWin new_b c i 1
+  let w = checkWin new_b 1
   if (w /= -1) then do
     showBoard new_b
     return w
@@ -331,7 +331,8 @@ play b 2 strat = do
   let (new_b, i) = updateBoard b c 2
   showBoard new_b
   putStrLn $ "CPU has choosen the row "++(show c)
-  let w = checkWin new_b c i 2
+  let w = checkWin new_b 2
+
   if (w /= -1) then
     return w
   else play new_b 1 strat
@@ -370,11 +371,11 @@ randomStrat (Board cs) = do
 
 greedyStrat :: Board -> IO Int
 greedyStrat (Board cs) = do
-  c1 <- checkNextWin cs 2 4 [] --check if CPU can win => wins
+  let c1 = checkNextWin cs 2 4 [] --check if CPU can win => wins
   if (c1 /= -1) then
     return c1
   else do
-    c2 <- checkNextWin cs 1 4 [] -- check if human can win => avoid it
+    let c2 = checkNextWin cs 1 4 [] -- check if human can win => avoid it
     if (c2 /= -1) then
       return c2
     else do
@@ -390,7 +391,7 @@ greedyStrat (Board cs) = do
 greedyStratAux :: Board -> Int -> Int -> IO Int
 greedyStratAux _ _ 1 = do return (-1)
 greedyStratAux (Board cs) player n = do
-  c1 <- checkNextWin cs player n []
+  let c1 = checkNextWin cs player n []
   if (c1 /= -1) then
     return c1
   else greedyStratAux (Board cs) player (n-1)
@@ -398,11 +399,11 @@ greedyStratAux (Board cs) player n = do
 -----------------------------------------------------------
 smartStrat :: Board -> IO Int
 smartStrat (Board cs) = do
-  c1 <- checkNextWin cs 2 4 [] --check if CPU can win => wins
+  let c1 = checkNextWin cs 2 4 [] --check if CPU can win => wins
   if (c1 /= -1) then
     return c1
   else do
-    c2 <- checkNextWin cs 1 4 [] -- check if human can win => avoid it
+    let c2 = checkNextWin cs 1 4 [] -- check if human can win => avoid it
     if (c2 /= -1) then
       return c2
     else do
@@ -418,10 +419,10 @@ smartStrat (Board cs) = do
 smartStratAux :: Board -> Int -> Int -> [Int] -> IO Int
 smartStratAux _ _ 1 _ = do return (-1)
 smartStratAux (Board cs) player n x = do
-  c1 <- checkNextWin cs player n x
+  let c1 = checkNextWin cs player n x
   if (c1 /= -1) then do
     let ((Board new_cs), i) = updateBoard (Board cs) c1 player
-    future <- checkNextWin new_cs 1 4 x
+    let future = checkNextWin new_cs 1 4 x
     if (future /= -1) then
       smartStratAux (Board cs) player 3 (future:x)
     else return c1
@@ -430,20 +431,39 @@ smartStratAux (Board cs) player n x = do
 --PROBLEMAS:
 -- PORQUE SACA ENCIMA MIA?
 
-nullBoard :: Board
-nullBoard = createBoard 0 0
-
 treeStrat :: Board -> IO Int
-treeStrat b = do
-  let (Node _ childs) = createTree b 2 4
+treeStrat (Board cs) = do
+  let (Node _ childs) = createTree (Board cs) 2 5
+  --putStrLn $ "childs: "++(show childs)
   let scores = getScoreChilds childs 1
-  return (maximum scores)
+  let maxi = maximum scores
+  putStrLn $ "scores: "++(show scores)
+  let results = filter (>0) $ indexMax maxi 1 scores
+  putStrLn $ "results: "++(show results)
+  let mid = div ((length results)-1) 2
+  return $ (results !! mid)-1
 
---calcScore :: Board -> Int -> Int
+calcScore :: Board -> Int -> Int
+calcScore (Board cs) p
+  | (length cs == 0) = -9999
+  | (result == 0)    = 0
+  | (result == 1)    = num - s
+  | (result == 2)    = s - num
+  | (p == 1 && next /= -1) = num - s
+  | (p == 2 && next /= -1) = s - num
+  | otherwise = -69
+  where
+    result = checkWin (Board cs) p
+    s = maxScore (Board cs)
+    num = numTokens cs p
+    next = checkNextWin cs p 3 []
 
-
+--heuristic :: [[Int]] -> Int -> Int
+--heuristic cs 1
+--  | (next /= -1) = num - s
+--  | otherwise    =
 getScore :: Tree Board -> Int -> Int
-getScore (Node b []) p = 0--calcScore b p
+getScore (Node b []) p = calcScore b (changeP p)
 getScore (Node b childs) p
   | (p == 1) = minimum (getScoreChilds childs (changeP p))
   | (p == 2) = maximum (getScoreChilds childs (changeP p))
@@ -454,9 +474,12 @@ getScoreChilds (t:ts) p = ((getScore t p):(getScoreChilds ts p))
 
 createTree :: Board -> Int -> Int -> Tree Board
 createTree b _ 0 = (Node b [])
-createTree b p depth = (Node b (createChildTrees childs (changeP p) (depth-1)))
+createTree (Board cs) p depth
+  | (length cs == 0)                        = (Node (Board cs) [])
+  | (checkWin (Board cs) (changeP p) == -1) = (Node (Board cs) (createChildTrees childs (changeP p) (depth-1)))
+  | otherwise                               = (Node (Board cs) [])
   where
-    childs = createChilds b p 0 depth
+    childs = createChilds (Board cs) p 0 depth
 
 createChildTrees :: [Board] -> Int -> Int -> [Tree Board]
 createChildTrees [] _ _ = []
@@ -465,7 +488,7 @@ createChildTrees (b:childs) p depth = ((createTree b p depth):(createChildTrees 
 createChilds :: Board -> Int -> Int -> Int -> [Board]
 createChilds (Board cs) p m depth
   | (m == (length cs)) = []
-  | (i == -1 && depth == 4) = (nullBoard:(createChilds (Board cs) p (m+1) depth))
+  | (i == -1 && depth == 5) = (nullBoard:(createChilds (Board cs) p (m+1) depth))
   | (i == -1) = createChilds (Board cs) p (m+1) depth
   | otherwise = (new_b:(createChilds (Board cs) p (m+1) depth))
   where
@@ -474,6 +497,28 @@ createChilds (Board cs) p m depth
 changeP :: Int -> Int
 changeP 1 = 2
 changeP 2 = 1
+
+indexMax :: Eq a => a -> Int -> [a] -> [Int]
+indexMax _ _ [] = []
+indexMax e i (x:xs)
+  | (e == x)  =   (i:(indexMax e (i+1) xs))
+  | otherwise = ((-i):(indexMax e (i+1) xs))
+
+nullBoard :: Board
+nullBoard = createBoard 0 0
+
+maxScore :: Board -> Int
+maxScore (Board cs) = 1 + (div ((length (cs !! 0))*(length cs)) 2)
+
+numTokens :: [[Int]] -> Int -> Int
+numTokens [] _ = 0
+numTokens (c:cs) p = (numTokensCol c p) + (numTokens cs p)
+
+numTokensCol :: [Int] -> Int -> Int
+numTokensCol [] _ = 0
+numTokensCol (x:xs) p
+  | (x == p) = 1 + (numTokensCol xs p)
+  | otherwise = numTokensCol xs p
 
 randInt :: Int -> Int -> IO Int
 -- randInt low high is an IO action that returns a
