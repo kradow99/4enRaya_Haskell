@@ -1,7 +1,11 @@
 import System.Random
 
+data Tree a = Node a [Tree a] deriving (Show)
 data Board = Board [[Int]]
 type Strategy = Board -> IO Int
+
+instance Show Board where
+    show (Board cs) = (show cs)++"\n"
 
 createBoard :: Int -> Int -> Board
 createBoard n m = Board (take m $ repeat $ (take n $ repeat 0))
@@ -116,30 +120,15 @@ chooseStrategy = do
 --0000000000000000000000000000 CHECK WIN  0000000000000000000000000000000
 --00000000000000000000000000000000000000000000000000000000000000000000000
 
-checkWin :: Board -> Int -> Int -> Int -> IO Int
-checkWin _ _ (-1) _ = do
-  return (-1)
-checkWin (Board cs) col row player = do
-  if (checkDraw cs) then
-    return 0
-  else do
-    r1 <- checkWinVert (cs !! col) player 0
-    if (r1 /= -1) then
-      return r1
-    else do
-      r2 <- checkWinHori cs row player 0
-      if (r2 /= -1) then
-        return r2
-      else do
-        r3 <- checkWinDia1 cs col row col row player 0
-        if (r3 /= -1) then
-          return r3
-        else do
-          r4 <- checkWinDia2 cs col row col row player 0
-          if (r4 /= -1) then
-            return r4
-          else
-            return (-1)
+checkWin :: Board -> Int -> Int -> Int -> Int
+checkWin _ _ (-1) _ = -1
+checkWin (Board cs) col row player
+  | (checkDraw cs)                                     = 0
+  | ((checkWinVert (cs !! col) player 0) /= -1)        = player
+  | ((checkWinHori cs row player 0) /= -1)             = player
+  | ((checkWinDia1 cs col row col row player 0) /= -1) = player
+  | ((checkWinDia2 cs col row col row player 0) /= -1) = player
+  | otherwise = -1
 
 checkDraw :: [[Int]] -> Bool
 checkDraw [] = True
@@ -147,65 +136,51 @@ checkDraw (c:cs)
   | (elem 0 c) = False
   | otherwise = checkDraw cs
 
-checkWinDia1 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> IO Int
-checkWinDia1 _ _ _ _ _ p 4 = do return p
+checkWinDia1 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> Int
+checkWinDia1 _ _ _ _ _ p 4 = p
 checkWinDia1 cs cini rini col row p count
-  | (row == -1)        = do return (-1)
-  | (col == length cs) = do return (-1)
+  | (row == -1)        = -1
+  | (col == length cs) = -1
 
-  | (col == cini) = checkWinDia1 cs cini rini (cini-1) (rini+1) p 1
+  | (col == cini)                               = checkWinDia1 cs cini rini (cini-1) (rini+1) p 1
 
-  | (col == -1)               = checkWinDia1 cs cini rini (cini+1) (rini-1) p count
-  | (row == length (cs !! 0)) = checkWinDia1 cs cini rini (cini+1) (rini-1) p count
+  | (col == -1)                                 = checkWinDia1 cs cini rini (cini+1) (rini-1) p count
+  | (row == length (cs !! 0))                   = checkWinDia1 cs cini rini (cini+1) (rini-1) p count
 
-  | (col < cini) = do
-    if (((cs !! col) !! row) == p) then
-      checkWinDia1 cs cini rini (col-1) (row+1) p (count+1)
-    else checkWinDia1 cs cini rini (cini+1) (rini-1) p count
-  | (col > cini) = do
-    if (((cs !! col) !! row) == p) then
-      checkWinDia1 cs cini rini (col+1) (row-1) p (count+1)
-    else return (-1)
+  | (col < cini && ((cs !! col) !! row) == p)   = checkWinDia1 cs cini rini (col-1) (row+1) p (count+1)
+  | (col < cini)                                = checkWinDia1 cs cini rini (cini+1) (rini-1) p count
+  | (col > cini && (((cs !! col) !! row) == p)) = checkWinDia1 cs cini rini (col+1) (row-1) p (count+1)
+  | otherwise = -1
 
-checkWinDia2 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> IO Int
-checkWinDia2 _ _ _ _ _ p 4 = do return p
+checkWinDia2 :: [[Int]] -> Int -> Int -> Int -> Int -> Int -> Int -> Int
+checkWinDia2 _ _ _ _ _ p 4 = p
 checkWinDia2 cs cini rini col row p count
-  | (row == length (cs !! 0)) = do return (-1)
-  | (col == length cs)        = do return (-1)
+  | (row == length (cs !! 0)) = -1
+  | (col == length cs)        = -1
 
-  | (col == cini) = checkWinDia2 cs cini rini (cini-1) (rini-1) p 1
+  | (col == cini)                               = checkWinDia2 cs cini rini (cini-1) (rini-1) p 1
 
-  | (col == -1) = checkWinDia2 cs cini rini (cini+1) (rini+1) p count
-  | (row == -1) = checkWinDia2 cs cini rini (cini+1) (rini+1) p count
+  | (col == -1)                                 = checkWinDia2 cs cini rini (cini+1) (rini+1) p count
+  | (row == -1)                                 = checkWinDia2 cs cini rini (cini+1) (rini+1) p count
 
-  | (col < cini) = do
-    if (((cs !! col) !! row) == p) then
-      checkWinDia2 cs cini rini (col-1) (row-1) p (count+1)
-    else checkWinDia2 cs cini rini (cini+1) (rini+1) p count
-  | (col > cini) = do
-    if (((cs !! col) !! row) == p) then
-      checkWinDia2 cs cini rini (col+1) (row+1) p (count+1)
-    else return (-1)
+  | (col < cini && (((cs !! col) !! row) == p)) = checkWinDia2 cs cini rini (col-1) (row-1) p (count+1)
+  | (col < cini)                                = checkWinDia2 cs cini rini (cini+1) (rini+1) p count
+  | (col > cini && (((cs !! col) !! row) == p)) = checkWinDia2 cs cini rini (col+1) (row+1) p (count+1)
+  | otherwise = -1
 
-checkWinHori :: [[Int]] -> Int -> Int -> Int -> IO Int
-checkWinHori _ _ p 4 = do
-  return p
-checkWinHori [] _ _ _ = do
-  return (-1)
-checkWinHori (c:cs) r p count = do
-  if ((c !! r) == p) then
-    checkWinHori cs r p (count+1)
-  else checkWinHori cs r p 0
+checkWinHori :: [[Int]] -> Int -> Int -> Int -> Int
+checkWinHori _ _ p 4 = p
+checkWinHori [] _ _ _ = -1
+checkWinHori (c:cs) r p count
+  | ((c !! r) == p) = checkWinHori cs r p (count+1)
+  | otherwise       = checkWinHori cs r p 0
 
-checkWinVert :: [Int] -> Int -> Int -> IO Int
-checkWinVert _ p 4 = do
-  return p
-checkWinVert [] _ _ = do
-  return (-1)
-checkWinVert (x:xs) p count = do
-  if (x == p) then
-    checkWinVert xs p (count+1)
-  else checkWinVert xs p 0
+checkWinVert :: [Int] -> Int -> Int -> Int
+checkWinVert _ p 4 = p
+checkWinVert [] _ _ = -1
+checkWinVert (x:xs) p count
+  | (x == p)  = checkWinVert xs p (count+1)
+  | otherwise = checkWinVert xs p 0
 
 --00000000000000000000000000000000000000000000000000000000000000000000000
 --00000000000000000000000 CHECK NEXT WIN  0000000000000000000000000000000
@@ -345,7 +320,7 @@ play b 1 strat = do
   let c = read col :: Int
   let (new_b, i) = updateBoard b c 1
   --putStrLn $ "Index : "++(show i)
-  w <- checkWin new_b c i 1
+  let w = checkWin new_b c i 1
   if (w /= -1) then do
     showBoard new_b
     return w
@@ -356,7 +331,7 @@ play b 2 strat = do
   let (new_b, i) = updateBoard b c 2
   showBoard new_b
   putStrLn $ "CPU has choosen the row "++(show c)
-  w <- checkWin new_b c i 2
+  let w = checkWin new_b c i 2
   if (w /= -1) then
     return w
   else play new_b 1 strat
@@ -455,6 +430,50 @@ smartStratAux (Board cs) player n x = do
 --PROBLEMAS:
 -- PORQUE SACA ENCIMA MIA?
 
+nullBoard :: Board
+nullBoard = createBoard 0 0
+
+treeStrat :: Board -> IO Int
+treeStrat b = do
+  let (Node _ childs) = createTree b 2 4
+  let scores = getScoreChilds childs 1
+  return (maximum scores)
+
+--calcScore :: Board -> Int -> Int
+
+
+getScore :: Tree Board -> Int -> Int
+getScore (Node b []) p = 0--calcScore b p
+getScore (Node b childs) p
+  | (p == 1) = minimum (getScoreChilds childs (changeP p))
+  | (p == 2) = maximum (getScoreChilds childs (changeP p))
+
+getScoreChilds :: [Tree Board] -> Int -> [Int]
+getScoreChilds [] _ = []
+getScoreChilds (t:ts) p = ((getScore t p):(getScoreChilds ts p))
+
+createTree :: Board -> Int -> Int -> Tree Board
+createTree b _ 0 = (Node b [])
+createTree b p depth = (Node b (createChildTrees childs (changeP p) (depth-1)))
+  where
+    childs = createChilds b p 0 depth
+
+createChildTrees :: [Board] -> Int -> Int -> [Tree Board]
+createChildTrees [] _ _ = []
+createChildTrees (b:childs) p depth = ((createTree b p depth):(createChildTrees childs p depth))
+
+createChilds :: Board -> Int -> Int -> Int -> [Board]
+createChilds (Board cs) p m depth
+  | (m == (length cs)) = []
+  | (i == -1 && depth == 4) = (nullBoard:(createChilds (Board cs) p (m+1) depth))
+  | (i == -1) = createChilds (Board cs) p (m+1) depth
+  | otherwise = (new_b:(createChilds (Board cs) p (m+1) depth))
+  where
+    (new_b, i) = updateBoard (Board cs) m p
+
+changeP :: Int -> Int
+changeP 1 = 2
+changeP 2 = 1
 
 randInt :: Int -> Int -> IO Int
 -- randInt low high is an IO action that returns a
