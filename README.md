@@ -132,7 +132,9 @@ Esta estrategia es la más sofisticada de las tres, y la más difícil de derrot
 
 En un turno se genera un arbol de decisiones con todas las posibles combinaciones de tableros hasta una profundidad máxima.
 
-Se puntua cada uno de los nodos hoja y se envía la mejor puntuación al nodo raíz.
+Los nodos hoja son tableros que, o han alcanzado la profundidad máxima, o contienen un estado final del juego (victoria o empate)
+
+Se puntua cada uno de los nodos hoja y se envía la mejor puntuación al nodo raíz. 
 
 La puntuación de los nodos de profundidad par es el máximo de las puntuaciones de sus hijos.
  
@@ -144,7 +146,7 @@ Los nodos de profundidad impar pertenecen a turnos del usuario, y por eso escoge
 
 Los nodos hoja que no sean un estado final de la partida (ni victoria ni empate) obtienen una puntuación en valor absoluto más baja que las que contienen victoria o empate.
 
-En caso de llenarse una columna, o llegar a un estado final (victoria o empate) en el tablero de un nodo, ese nodo no tendrá hijos.
+Si un tablero contiene alguna columna llena, no se generan los hijos a los que les correspondería colocar una casilla en dichas columnas.
 
 En caso de empate de puntuaciones en los hijos del nodo raíz con puntuación máxima, se selecciona la columna más cercana al centro del tablero.
 
