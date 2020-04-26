@@ -1,6 +1,6 @@
 # Connect 4 Game
 
-Programa del juego 4 en raya programado en Haskell. Permite a un usuario jugar contra una IA con 3 niveles de dificultad en un tablero de cualquier tamaño con más de 4 filas y 4 columnas
+Programa del juego 4 en raya programado en Haskell. Permite a un usuario jugar contra una IA con 3 niveles de dificultad en un tablero de cualquier tamaño con más de 4 filas y 4 columnas.
 
 ## Presentación
 
