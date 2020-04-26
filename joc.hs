@@ -304,7 +304,7 @@ updateBoard (c:cs) i p
     u = updateCol c p
 
 {-
-updateCol: función auxiliar de updateBoardRec
+updateCol: función auxiliar de updateBoard
 Dada una columna y un jugador
 Devuelve la misma columna pero con una ficha del jugador indicado añadida en la columna en la primera fila disponible
 -}
