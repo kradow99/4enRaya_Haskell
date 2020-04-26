@@ -6,6 +6,8 @@ Programa del juego 4 en raya programado en Haskell. Permite a un usuario jugar c
 
 El objetivo de 'Conecta 4' o '4 en raya' es alinear cuatro fichas sobre un tablero formado por seis filas y siete columnas. Cada jugador dispone de 21 fichas de un color (por lo general, rojas o amarillas). Por turnos, los jugadores deben introducir una ficha en la columna que prefieran (siempre que no esté completa) y ésta caerá a la posición más baja. Gana la partida el primero que consiga alinear cuatro fichas consecutivas de un mismo color en horizontal, vertical o diagonal. Si todas las columnas están llenas pero nadie ha hecho una fila válida, hay empate.
 
+En este programa, el tamaño del tablero es configurable siempre y cuando tenga más de 4 filas y 4 columnas.
+
 ![Ejemplo de tablero](board.png)
 
 ## Ejecutar el juego
