@@ -519,7 +519,7 @@ checkNextObjVert :: Board -> Int -> Int -> Int -> Int
 checkNextObjVert [] _ _ _ = -1
 checkNextObjVert (c:cs) col player obj
   | (checkNextObjCol c 0 player obj) = col
-  | otherwise                         = checkNextObjVert cs (col+1) player obj
+  | otherwise                        = checkNextObjVert cs (col+1) player obj
 
 {-
 checkNextObjCol: función auxiliar de checkNextObjVert
@@ -595,7 +595,7 @@ checkNextObjDia1 (c:cs) col row n player obj
     res2 = checkNextObjOneDia1 (c:cs) col  row    0 (-1) (switchP player) (switchP player) player obj
 
 {-
-checkNextObjOneDia1: función auxiliar de checkNextObj
+checkNextObjOneDia1: función auxiliar de checkNextObjDia1
 Dado un tablero, un índice de columna y uno de fila, un entero 'count', índice de columna 'gap', dos índices de columna 'ant1' y 'ant2',
 un jugador 'p' y un objetivo 'obj'
 Devuelve 'gap', que indica el hueco donde, si 'p' coloca ficha, consigue 'obj' fichas seguidas en la diagonal descendente indicada (cuando count=obj)
@@ -641,7 +641,7 @@ checkNextObjDia2 cs 0 row n player obj
     res = checkNextObjOneDia2 cs 0 row 0 (-1) (switchP player) (switchP player) player obj
 
 {-
-checkNextObjOneDia2: función auxiliar de checkNextObj
+checkNextObjOneDia2: función auxiliar de checkNextObjDia2
 Dado un tablero, un índice de columna y uno de fila, un entero 'count', índice de columna 'gap', dos índices de columna 'ant1' y 'ant2',
 un jugador 'p' y un objetivo 'obj'
 Devuelve 'gap', que indica el hueco donde, si 'p' coloca ficha, consigue 'obj' fichas seguidas en la diagonal ascendente indicada (cuando count=obj)
@@ -707,7 +707,6 @@ Sinó, si el jugador human tiene oportunidad de ganar en la siguiente tirada, se
 Sinó, se selecciona la columna que permite a npc juntar 3 fichas seguidas en la próxima tirada. Sinó, la que le permite juntar 2
 Sinó, se selecciona la columna que permite a human juntar 3 fichas seguidas en la próxima tirada. Sinó, la que le permite juntar 2
 -}
-
 greedyStrat :: Board -> IO Int
 greedyStrat b = do
   let c1 = checkNextObj b npc 4 --check if npc can win
