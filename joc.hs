@@ -219,7 +219,7 @@ play b player strat
       c <- strat b
       let new_b = updateBoard b c player
       showBoard new_b
-      putStrLn $ "CPU has choosen the row "++(show c)
+      putStrLn $ "CPU has choosen the column "++(show c)
       let w = checkWin new_b player
       if (w /= -1) then
         return w
@@ -766,8 +766,6 @@ smartStrat b = do
   let (Node _ childs) = createTree b npc (getDepth b)
   let scores = getScoreChilds childs human
   let maxi = maximum scores
-  putStrLn $ "scores: "++(show scores)
-  putStrLn $ "depth: "++(show $ getDepth b)
   let results = filter (>0) $ indexMax maxi 1 scores
   let mid = div ((length results)-1) 2
   return $ (results !! mid)-1
