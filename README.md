@@ -1,17 +1,32 @@
-# Project Title
+# Connect 4 Game
 
-One Paragraph of project description goes here
+Programa del juego 4 en raya programado en Haskell. Permite a un usuario jugar contra 3 IA's diferentes en un tablero de cualquier tamaño con más de 4 filas y 4 columnas
 
-## Getting Started
+## Cómo jugar
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
-
-### Prerequisites
-
-What things you need to install the software and how to install them
-
+Compilar el fichero joc.hs:
 ```
-Give examples
+ghc joc.hs
+```
+Abrir el ejecutable generado:
+```
+./joc
+```
+### Prerequisitos
+
+Para poder compilar es necesario instalar el paquete `random`, ya que es necesario importar `System.random` para generar números aleatorios en una de las estrategias del juego.
+
+En Mac:
+```
+> brew install cabal-install
+> cabal update
+> cabal install --lib random
+```
+En Ubuntu:
+```
+> sudo apt install cabal-install
+> cabal update
+> cabal install random
 ```
 
 ### Installing
