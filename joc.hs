@@ -1,3 +1,5 @@
+--https://github.com/kradow99/4enRaya_Haskell/
+
 --000000000000000000000000000000000000000000000000000000000
 --00000000000000000  CONNECT 4 GAME  0000000000000000000000
 --000000000000000000000000000000000000000000000000000000000
@@ -94,7 +96,7 @@ Cuando la partida finaliza se escribe por la salida estándar el ganador de la p
 -}
 main :: IO ()
 main = do
-  putStrLn "Welcome to the Connect4 game"
+  putStrLn "Welcome to the Connect 4 game"
   b <- initBoard
   s <- chooseStrategy
   p <- whoStarts
