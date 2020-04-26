@@ -136,9 +136,7 @@ Los nodos de profundidad par pertenecen a turnos de npc, y queremos escoger la j
 
 La puntuación de los nodos de profundidad impar es el mínimo de las puntaciones de sus hijos.
 
-Los nodos de profundidad impar pertenecen a turnos del usuario, y por eso escogemos la puntuación más baja posible. Es por eso que los nodos hoja con victoria del usuario tienen una puntuación negativa, y cuantas menos fichas necesite para ganar, más baja será la puntuación
-
-Debemos suponer que el usuario elegirá siempre la jugada que más perjudique al npc.
+Los nodos de profundidad impar pertenecen a turnos del usuario, y por eso escogemos la puntuación más baja posible (debemos suponer que el usuario elegirá siempre la jugada que más perjudique al npc). Es por eso que los nodos hoja con victoria del usuario tienen una puntuación negativa, y cuantas menos fichas necesite para ganar, más baja será la puntuación
 
 Los nodos hoja que no sean un estado final de la partida (ni victoria ni empate) obtienen una puntuación en valor absoluto más baja que las que contienen victoria o empate.
 
@@ -146,50 +144,23 @@ En caso de llenarse una columna, o llegar a un estado final (victoria o empate) 
 
 En caso de empate de puntuaciones en los hijos del nodo raíz con puntuación máxima, se selecciona la columna más cercana al centro del tablero.
 
-La siguiente imagen, extraída de Wikipedia muestra un ejemplo de árbol de decisiones del algoritmo `minimax`
+La siguiente imagen, extraída de Wikipedia, muestra un ejemplo de árbol de decisiones del algoritmo `minimax`
 
+![Ejemplo de árbol minimax](minimax_tree.png)
 
+Para más información, visitar https://es.wikipedia.org/wiki/Minimax
+#### Pros
+Es una estrategia difcil de derrotar.
 
+Cuando elige una casilla lo hace teniendo en cuenta las posibles jugadas futuras y en base a eso el npc elige la opción más beneficiosa para él.
+#### Contras
+El tiempo que tarda en decidir una columna es muy elevado. Según la profundidad del árbol, tardará más o menos en decidir una columna. Con una profundidad de 5 en un tablero de 6x7 tarda no más de 2 segundos en decidir (aunque con tableros más grandes el tiempo se eleva). El tiempo de cálculo crece exponencialmente cuando la profundidad se incrementa (aunque cuando el tablero va llenando columnas enteras el factor de ramificación disminuye, y en consecuencia el tiempo de cálculo también disminuye)
 
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
 
 ## Built With
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+* [Haskell](https://www.haskell.org/)
 
-## Contributing
+## Autor
 
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+* **Marcos Gómez Vázquez** - *Facultad de Informática de Barcelona, UPC*
