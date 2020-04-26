@@ -101,11 +101,13 @@ CPU wins!
 El rival del usuario es un npc (non-playable character) que puede comportarse de 3 maneras diferentes, basándose en una de las siguientes estrategias.
 ### Estrategia Random (nivel fácil)
 Cuando el npc debe elegir una columna donde tirar, la elige al azar. Si la columna que ha seleccionado ya est llena elige otra hasta que no sea una columna llena.
+
+Esta estrategia es la que requiere instalar el paquete `random`, que provee las herramientas necesarias para generar números aleatorios.
 #### Pros
 Estrategia simple y fácil de implementar
 #### Contras
-Es muy fácil de derrotar, incluso sin tener habilidades en el 4 en raya
-Esta estrategia es la que requiere instalar el paquete `random`, que provee las herramientas necesarias para generar números aleatorios.
+Es muy fácil de derrotar, incluso sin tener habilidades en el 4 en raya.
+
 ### Estrategia Greedy (nivel medio)
 Con esta estrategia, el npc siempre elige la mejor columna en el momento actual. 
 
