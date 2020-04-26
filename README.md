@@ -2,7 +2,13 @@
 
 Programa del juego 4 en raya programado en Haskell. Permite a un usuario jugar contra 3 IA's diferentes en un tablero de cualquier tamaño con más de 4 filas y 4 columnas
 
-## Cómo jugar
+## Presentación
+
+El objetivo de 'Conecta 4' o '4 en raya' es alinear cuatro fichas sobre un tablero formado por seis filas y siete columnas. Cada jugador dispone de 21 fichas de un color (por lo general, rojas o amarillas). Por turnos, los jugadores deben introducir una ficha en la columna que prefieran (siempre que no esté completa) y ésta caerá a la posición más baja. Gana la partida el primero que consiga alinear cuatro fichas consecutivas de un mismo color en horizontal, vertical o diagonal. Si todas las columnas están llenas pero nadie ha hecho una fila válida, hay empate.
+
+![holaaaaaaaaaaaa](board.png)
+
+## Ejecutar el juego
 
 Compilar el fichero joc.hs:
 ```
@@ -12,7 +18,7 @@ Abrir el ejecutable generado:
 ```
 ./joc
 ```
-### Prerequisitos
+## Prerequisitos
 
 Para poder compilar es necesario instalar el paquete `random`, ya que es necesario importar `System.random` para generar números aleatorios en una de las estrategias del juego.
 
