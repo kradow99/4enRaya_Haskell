@@ -81,7 +81,7 @@ Select a column
 · · · · · · ·
 · · x o · · ·
 0 1 2 3 4 5 6
-CPU has choosen the row 2
+CPU has choosen the column 2
 Select a column
 > 
 ```
@@ -94,7 +94,7 @@ La partida finaliza cuando haya una victoria o un empate. A continuación se mue
 · · o o x · ·
 · o x o o x ·
 0 1 2 3 4 5 6
-CPU has choosen the row 5
+CPU has choosen the column 5
 CPU wins!
 ```
 ## Estrategias
